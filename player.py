@@ -9,6 +9,9 @@ class Player(CircleShape):
         self.rotation = 0
         self.direction = pygame.Vector2(0, -1)  # Start facing upwards
         self.timer = 0
+        self.velocity = pygame.Vector2(0, 0)    
+        self.acceleration = 2                
+        self.friction = 0.99                    
 
     def triangle(self):
         forward = self.direction
@@ -17,7 +20,7 @@ class Player(CircleShape):
         b = self.position - forward * self.radius - right * (self.radius / 1.5)
         c = self.position - forward * self.radius + right * (self.radius / 1.5)
         return [a, b, c]
-        
+
     def draw(self, screen):
         pygame.draw.polygon(screen, 'white', self.triangle(), 2)
 
@@ -26,16 +29,18 @@ class Player(CircleShape):
         self.direction = pygame.Vector2(0, -1).rotate(-self.rotation)
 
     def move(self, dt):
-        self.position += self.direction * PLAYER_SPEED * dt
+        self.velocity *= self.friction
+        self.position += self.velocity * dt
+
+    def thrust(self, dt):
+        self.velocity += self.direction * self.acceleration
 
     def shoot(self):
         if self.timer > 0:
             return None
         else:
             self.timer = PLAYER_SHOOT_COOLDOWN
-            # Calculate the position of the shot (front of the player)
             shot_pos = self.position + self.direction * self.radius
-            # Create a new shot with the player's current direction
             new_shot = Shot(shot_pos.x, shot_pos.y, self.direction)
             return new_shot
 
@@ -47,9 +52,9 @@ class Player(CircleShape):
         if keys[pygame.K_d]:
             self.rotate(-dt)
         if keys[pygame.K_w]:
-            self.move(dt)
-        if keys[pygame.K_s]:
-            self.move(-dt)
+            self.thrust(dt)
+        self.move(dt)
         if keys[pygame.K_SPACE]:
             return self.shoot()
+
         return None
